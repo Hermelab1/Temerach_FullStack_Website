@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;450;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cardo:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply md:text-lg text-base ;
+  font-family: 'Poppins', sans-serif;
+  color: #105F4E;
+}
+section{
+  @apply relative overflow-hidden h-auto;
+}
+
+.pages a{
+  font-family: 'Poppins', sans-serif;
+}
+.inputs {
+  @apply mb-3 p-[8px] rounded-sm w-full text-base rounded-md focus:border-gray-500 focus:outline-none text-[#105F4E];
+  border: 1px solid #105F4E; 
+
+}
+
+.storyImg {
+  @apply md:w-[49%] h-full shadow-custom w-[45%] animate-[rightToLeft_2s_ease-in_forwards] object-fill;
+}
+a {
+  @apply font-normal text-[#105f4e];
+  font-family: "Cardo", serif;
+}
+
+p {
+  @apply text-[#105f4e] font-normal text-justify 2xl:leading-[2.4rem] xl:leading-[2.3rem] md:leading-[2.3rem] leading-[1.9rem];
+}
+.likes{
+  @apply absolute bottom-2 right-2 flex gap-2 text-sm;
+}
+.likes button{
+  @apply bg-transparent hover:bg-transparent text-gray-400;
+}
+h4 {
+  @apply text-[#286461];
+}
+
+button {
+  @apply  bg-[#105f4e] text-white font-light cursor-pointer hover:bg-[#1fac84];
+}
+
+.covers {
+  @apply relative w-full h-[75vh];
+}
+.blog-details{
+  @apply border maxm:w-[380px] slg:w-[400px] slg:h-[600px] lg:w-[380px] md:w-[350px] lg:h-[500px] h-[550px] bg-white shadow-blog overflow-hidden lg:m-[20px] md:m-[15px] m-[20px] flex flex-col relative border-2 border-gray-300;
+}
+.bmedia {
+  @apply w-full h-full overflow-hidden flex justify-center items-center;
+}
+.covers .imgs {
+  @apply flex flex-col; /* Ensure images stack vertically */
+}
+
+.covers .imgs img {
+  @apply w-full h-[75vh] object-cover;
+}
+
+.hero::before{
+  @apply content-[''] absolute top-0 left-0 w-full md:h-[90vh] h-[100vh] bg-black/50; /* Overlay with opacity */
+}
+
+.covers::before {
+  @apply content-[''] absolute top-0 left-0 w-full h-[75vh] bg-black/50; /* Overlay with opacity */
+}
+
+.covers .slogan{
+  @apply absolute md:top-[35%] top-[35%] text-white w-full  text-center;
+}
+
+.hero .slogan{
+  @apply absolute md:top-[35%] top-[30%] text-white w-full text-center px-8;
+}
+
+/* Custom styles using Tailwind CSS classes */
+.covers .heading, .hero .heading{
+  @apply text-center w-full items-center justify-center; /* Only apply Tailwind utilities */
+}
+
+.covers .heading h1{
+  @apply text-[#f7fdfc] md:text-[37px] text-[34px] capitalize lg:leading-[40px] leading-[35px] tracking-wide;
+  font-family: "Cardo", serif;
+}
+.hero .heading h1{
+  @apply text-[#f7fdfc] md:text-[37px] text-[34px] capitalize lg:leading-[40px] leading-[50px] tracking-widest;
+  font-family: "Cardo", serif;
+}
+
+
+.covers .heading p, .hero .heading p{
+  @apply  text-white lg:leading-[0px] leading-[0px];
+  font-family: 'Poppins', sans-serif;
+}
+
+section .heading h1 {
+  @apply text-[#3e1c08] text-[30px] leading-[20px] mt-14 mb-6 text-center font-bold;
+  font-family: "Cardo", serif;
+}
+
+section .heading p {
+  @apply text-[#3e1c08] border-none text-center mb-[10px] sm:mb-[20px] tracking-widest;
+  font-family: 'Poppins', sans-serif;
+}
+
+textarea,
+input {
+  @apply border-none outline-none bg-transparent;
+}
+
+.custom-swiper .swiper-pagination-bullet {
+  @apply bg-[#105F4E] opacity-70 transition-opacity transition-transform duration-300; /* Custom bullet color */
+}
+
+.custom-swiper .swiper-pagination-bullet-active {
+  @apply opacity-100 transform scale-110; /* Full opacity for the active bullet */
+}
+
+.custom-swiper .swiper-pagination-bullet:hover {
+  @apply opacity-100 transform scale-110; /* Full opacity on hover */
+}
+
+.fade-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.fade-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms ease-in, transform 200ms ease-in;
+}
+.fade-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.fade-exit-active {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 200ms ease-in, transform 200ms ease-in;
+}
