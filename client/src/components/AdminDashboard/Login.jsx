@@ -1,123 +1,134 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { login, register } from '../API/apis';
 
-const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [roleId, setRoleId] = useState('1');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
-  
+const AuthPage = () => {
   const navigate = useNavigate();
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    roleId: '1'
+  });
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-    if (isRegistering) {
-      // Handle registration
-      try {
-        const response = await axios.post('http://localhost:4001/api/register', {
-          username,
-          password,
-          roleId,
+  const toggleMode = () => {
+    setIsRegistering(!isRegistering);
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      if (isRegistering) {
+        await register(formData);
+        setIsRegistering(false); // Switch to login after successful registration
+        alert("Account created successfully!");
+      } else {
+        const data = await login({
+          identifier: formData.username,
+          password: formData.password
         });
-
-        console.log(response.data);
-        setIsRegistering(false);
-        setUsername('');
-        setPassword('');
-        setRoleId('1');
-        setErrorMessage('');
-        navigate('/login', { replace: true });
-      } catch (error) {
-        setErrorMessage(error.response?.data?.error || 'Registration failed.');
+        localStorage.setItem('authToken', data.token);
+        navigate('/admin', { replace: true });
       }
-    } else {
-      // Handle login
-      try {
-        const response = await axios.post('http://localhost:4001/api/login', {
-          username,
-          password,
-        });
-
-        console.log(response.data);
-
-        // Assuming the token is provided in response, storing it locally
-        localStorage.setItem('adminToken', response.data.token); // Adjust based on your actual response structure
-        
-        // Navigate to the admin page
-        navigate('/admin', { replace: true }); // Change '/admin/dashboard' to the correct route for your admin dashboard
-      } catch (error) {
-        console.error('Login error:', error);
-        setErrorMessage(error.response?.data?.error || 'Login failed. Please check your credentials.');
-      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="bg-white p-8 shadow-md rounded-md h-[60vh]">
-        <h2 className="text-lg font-bold mb-4">{isRegistering ? 'Create User' : 'Login'}</h2>
-        
-        <form onSubmit={handleSubmit}>
-          <label className="block text-gray-600 text-sm mb-2" htmlFor="username">Username:</label>
-          <input
-            type="text"
-            name="username"
-            placeholder='Enter User Name'
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full py-2 pl-10 text-gray-600 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 transition"
-          />
-          
-          <label className="block text-gray-600 text-sm mb-2" htmlFor="password">Password:</label>
-          <input
-            type="password"
-            name="password"
-            placeholder='Enter User Password'
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full py-2 pl-10 text-gray-600 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 transition"
-          />
-          
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 border border-slate-100">
+        <header className="text-center mb-8">
+          <h2 className="text-3xl font-extrabold text-slate-800">
+            {isRegistering ? 'Create Account' : 'Welcome Back'}
+          </h2>
+          <p className="text-slate-500 mt-2">
+            {isRegistering ? 'Join our platform today' : 'Please enter your details'}
+          </p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
+            <input
+              name="username"
+              type="text"
+              required
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+              placeholder="johndoe"
+              value={formData.username}
+              onChange={handleChange}
+            />
+          </div>
+
           {isRegistering && (
-            <>
-              <label className="block text-gray-600 text-sm mb-2" htmlFor="roleId">Role ID:</label>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
               <input
-                type="text"
-                name="roleId"
-                placeholder='Enter Role ID'
-                value={roleId}
-                onChange={(e) => setRoleId(e.target.value)}
-                className="w-full py-2 pl-10 text-gray-600 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 transition"
+                name="email"
+                type="email"
+                required
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                placeholder="you@example.com"
+                value={formData.email}
+                onChange={handleChange}
               />
-            </>
+            </div>
           )}
-          
-          <button type="submit" className="mt-4 bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded-md block w-full">
-            {isRegistering ? 'Create User' : 'Login'}
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <input
+              name="password"
+              type="password"
+              required
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={handleChange}
+            />
+          </div>
+
+          {error && (
+            <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition duration-200 transform active:scale-[0.98] disabled:opacity-70"
+          >
+            {loading ? 'Processing...' : isRegistering ? 'Sign Up' : 'Sign In'}
           </button>
         </form>
-        
-        {errorMessage && <p className="text-red-500 text-sm mt-4">{errorMessage}</p>}
-        
-        <div className="text-center mt-4">
-          {isRegistering ? (
-            <p>
-              Already have an account?{' '}
-              <button onClick={() => setIsRegistering(false)} className="text-blue-500">Login here.</button>
-            </p>
-          ) : (
-            <p>
-              Don't have an account?{' '}
-              <button onClick={() => setIsRegistering(true)} className="text-blue-500">Create User.</button>
-            </p>
-          )}
-        </div>
+
+        <footer className="mt-6 text-center">
+          <button 
+            onClick={toggleMode}
+            className="text-sm font-medium text-blue-600 hover:text-blue-500 transition"
+          >
+            {isRegistering ? 'Already have an account? Log in' : "Don't have an account? Register"}
+          </button>
+        </footer>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default AuthPage;

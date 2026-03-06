@@ -1,11 +1,14 @@
 // Import necessary libraries and components
-import React, { useRef} from 'react';
+import React, { useRef, useState} from 'react';
 import img from '../../asset/img/CoverImages/Bcover.webp';
+//import { useNavigate } from 'react-router-dom';
 import Heading from '../Home/headings';
 import Footer from '../footage/footage';
 import emailjs from '@emailjs/browser';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 
+const API_URL = 'http://localhost:4001/api';
 // Define animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 50 },
@@ -14,14 +17,54 @@ const fadeInUp = {
 
 const ContactUsDetail = () => {
   const form = useRef();
+ // const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    FullName: '',
+    CompanyName: '',
+    Phone: '',
+    Websites: '',
+    Email: '',
+    Memo: '',
+  });
 
-  const sendEmail = (e) => {
+  // Handle input change
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    emailjs
-      .sendForm('service_w6blv2o', 'template_whcj7rk', form.current, 'Puv041KtiA_TZduH2') // Use the correct public key here.
+    try {
+      // Send data to the database
+      const response = await axios.post(`${API_URL}/addcontactus`);
 
-    e.target.reset();
+      if (response.status === 201) {
+        console.log('Data saved successfully');
+        alert('Message sent successfully!');
+
+        // Send email via EmailJS
+        await emailjs.sendForm('service_w6blv2o', 'template_lb47k4j', form.current, 'Puv041KtiA_TZduH2');
+        console.log('Email sent successfully');
+
+        // Reset form
+        e.target.reset();
+        setFormData({
+          FullName: '',
+          CompanyName: '',
+          Phone: '',
+          Websites: '',
+          Email: '',
+          Memo: '',
+        });
+      } else {
+        throw new Error('Failed to save data');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Something went wrong. Please try again.');
+    }
   };
 
   return (
@@ -50,14 +93,14 @@ const ContactUsDetail = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="flex flex-row w-full xl:w-[35%] lg:w-[40%] md:w-[45%] text-center lg:mx-8 md:mx-2 mx-6 lg:my-12  md:my-4 my-4">
-            <form ref={form} onSubmit={sendEmail}>
-              <input type="text" name="user_name" placeholder='Full Name' className='inputs' required />
-              <input type="text" name="user_companyname" placeholder='Company Name' className='inputs' required />
-              <input type="text" name="user_website" placeholder='Website' className='inputs' required /> 
-              <input type="email" name="user_email" placeholder='Email' className='inputs' required />
-              <textarea name="message" id="" cols="20" rows="8" placeholder='Leave your message here' className='inputs' required></textarea>
-              <button className="p-3" type="submit">Send Message</button>
-            </form>
+            <form ref={form} onSubmit={handleSubmit}>
+            <input className='inputs' type="text" name="FullName" value={formData.FullName} onChange={handleChange} placeholder='Full Name' required />
+            <input className='inputs' type="text" name="CompanyName" value={formData.CompanyName} onChange={handleChange} placeholder='Company Name' />
+            <input className='inputs' type="text" name="Phone" value={formData.Phone} onChange={handleChange} placeholder='Phone Number' />
+            <input className='inputs' type="text" name="Websites" value={formData.Websites} onChange={handleChange} placeholder='Website' />
+            <input className='inputs' type="email" name="Email" value={formData.Email} onChange={handleChange} placeholder='Email' required />
+            <textarea className='inputs' name="Memo" value={formData.Memo} onChange={handleChange} cols="20" rows="8" placeholder='Leave your message here' required></textarea>
+            <button className="p-3 bg-[#105F4E] text-white" type="submit">Send Message</button> </form>
             {/* {statusMessage && <p>{statusMessage}</p>}  Displays success or error messages */}
           </div>
 

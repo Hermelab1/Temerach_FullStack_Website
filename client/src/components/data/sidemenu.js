@@ -10,10 +10,11 @@ export const sidemenu = [
             { title: 'Blog', path: '/admin/addblog' },
             { title: 'Employee', path: '/admin/addemployee' },
             { title: 'Categorie', path: '/admin/addcategories' },
-            { title: 'Items', path: '/admin/additems' },
-            { title: 'Our Touch', path: '/admin/addourtouch' },
             { title: 'Testimonial', path: '/admin/addtestimonial' },
-            { title: 'Contactus', path: '/admin/contactushistory' }
+            { title: 'Contactus', path: '/admin/contactushistory' },
+            { title: 'Orders', path: '/admin/orders'},
+            { title: 'Payment', path: '/admin/payment'},
+            { title: 'Currency', path: '/admin/currency'}
         ]
     },
     {

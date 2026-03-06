@@ -1,87 +1,107 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { blogs } from '../data/blog';
 import imagescover from '../../asset/img/CoverImages/Bcover.webp';
 import Footer from '../footage/footage';
 import Heading from '../Home/headings';
 import { motion } from 'framer-motion';
 import Contacts from '../contact/contacts';
+import axios from 'axios';
+
+const API = "http://localhost:4001/api";
+const ImageSource = "http://localhost:4001";
 
 const Blog = () => {
-  const [visibleSections, setVisibleSections] = useState(new Array(blogs.length).fill(false));
-  const [likeCounts, setLikeCounts] = useState(() => {
-    const savedCounts = localStorage.getItem('likeCounts');
-    return savedCounts ? JSON.parse(savedCounts) : new Array(blogs.length).fill(0);
-  });
-  const [shareCounts, setShareCounts] = useState(() => {
-    const storedShares = localStorage.getItem('shareCounts');
-    return storedShares ? JSON.parse(storedShares) : new Array(blogs.length).fill(0);
-  });
+  const [blogs, setBlogs] = useState([]);
+  const [visibleSections, setVisibleSections] = useState([]);
+  const [isShareVisible, setIsShareVisible] = useState([]);
 
-  const [isShareVisible, setIsShareVisible] = useState(new Array(blogs.length).fill(false));
+  // Fetch blogs from API
+  const fetchBlogs = async () => {
+    try {
+      const res = await axios.get(`${API}/activeblogs`);
+      setBlogs(res.data);
+      setVisibleSections(new Array(res.data.length).fill(false));
+      setIsShareVisible(new Array(res.data.length).fill(false));
+    } catch (err) {
+      console.error('Error fetching blogs:', err);
+    }
+  };
 
-  const sortedBlogs = [...blogs].sort((a, b) => new Date(b.date) - new Date(a.date));
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
 
-  const handleScroll = useCallback(() => {
-    const newVisibleSections = sortedBlogs.map((_, index) => {
-      const card = document.getElementById(`blog-details-${index}`);
-      if (card) {
-        const rect = card.getBoundingClientRect();
-        return rect.top < window.innerHeight && rect.bottom >= 0;
-      }
-      return false;
+  // Format date
+  const formatDate = (isoString) => {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
-    setVisibleSections(newVisibleSections);
-  }, [sortedBlogs]);
+  };
+
+  // Scroll animation
+  const handleScroll = useCallback(() => {
+    const newVisible = blogs.map((_, index) => {
+      const card = document.getElementById(`blog-details-${index}`);
+      if (!card) return false;
+      const rect = card.getBoundingClientRect();
+      return rect.top < window.innerHeight && rect.bottom >= 0;
+    });
+    setVisibleSections(newVisible);
+  }, [blogs]);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
     handleScroll();
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  const handleLike = (index) => {
-    const newLikeCounts = [...likeCounts];
-    newLikeCounts[index] += 1;
-    setLikeCounts(newLikeCounts);
-    localStorage.setItem('likeCounts', JSON.stringify(newLikeCounts));
+  // Handle like
+  const handleLike = async (id) => {
+    try {
+      const liked = localStorage.getItem(`blogs${id}/like`);
+      if (liked) return alert("You already liked this blog");
+      await axios.put(`${API}/blogs/${id}/like`);
+      localStorage.setItem(`liked_${id}`, true);
+      fetchBlogs();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const totalLikesForBlog = (index) => {
-    return likeCounts[index];
-  };
+  // Handle share
+  const handleShare = async (id, title, platform) => {
+    try {
+      await axios.put(`${API}/blogs/${id}/share`);
+      fetchBlogs();
 
-  const handleShare = (index, title, url, platform) => {
-    const newShareCounts = [...shareCounts];
-    newShareCounts[index] += 1;
-    setShareCounts(newShareCounts);
-    localStorage.setItem('shareCounts', JSON.stringify(newShareCounts));
-
-    const encodedTitle = encodeURIComponent(title);
-    const encodedUrl = encodeURIComponent(url);
-    const shareUrls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&title=${encodedTitle}`,
-      twitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
-      email: `mailto:?subject=${encodedTitle}&body=${encodedUrl}`,
-      telegram: `https://telegram.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
-    };
-
-    const shareWindow = window.open(shareUrls[platform], '_blank');
-    if (shareWindow) {
-      shareWindow.focus();
+      const encodedTitle = encodeURIComponent(title);
+      const encodedUrl = encodeURIComponent(window.location.href);
+      const shareUrls = {
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedTitle}`,
+        twitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
+        email: `mailto:?subject=${encodedTitle}&body=${encodedUrl}`,
+        telegram: `https://telegram.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
+      };
+      const shareWindow = window.open(shareUrls[platform], '_blank');
+      if (shareWindow) shareWindow.focus();
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const toggleShareButtons = (index) => {
-    setIsShareVisible((prev) => {
-      const newVisibility = [...prev];
-      newVisibility[index] = !newVisibility[index];
-      return newVisibility;
+    setIsShareVisible(prev => {
+      const copy = [...prev];
+      copy[index] = !copy[index];
+      return copy;
     });
   };
+
+  // Sort blogs by createdAt
+  const sortedBlogs = [...blogs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   return (
     <section className="blog">
@@ -93,93 +113,86 @@ const Blog = () => {
           <Heading title="Blog" subtitle="Temerachi Coffee Export" />
         </div>
       </div>
+
       <section>
         <div className="container flex flex-wrap m-auto justify-center md:my-6 my-0">
-          {sortedBlogs.map((blog, index) => {
-            const { title, detail, mediaType, mediaSrc, date } = blog;
-            return (
-              <motion.div
-                key={index}
-                id={`blog-details-${index}`}
-                className="blog-details"
-                initial={{ opacity: 0, y: 50 }}
-                animate={visibleSections[index] ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-                transition={{ duration: 0.5 }}
-              >
-                <div className="bmedia">
-                  {mediaType === 'video' ? (
-                    <video src={mediaSrc} controls />
-                  ) : (
-                    <img src={mediaSrc} alt={title || 'Blog media'} className='w-full h-full top-0' />
+          {sortedBlogs.map((post, index) => (
+            <motion.div
+              key={post.id}
+              id={`blog-details-${index}`}
+              className="blog-details border rounded shadow-md mb-6 w-full md:w-[30%] m-2"
+              initial={{ opacity: 0, y: 50 }}
+              animate={visibleSections[index] ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="bmedia">
+                {post.mediaType === 'video' 
+                  ? <video src={`${ImageSource}${post.mediaSrc}`} controls className="w-full h-64 object-cover" />
+                  : <img 
+                      src={`${ImageSource}${post.mediaSrc}`} 
+                      alt={post.blogTitle} 
+                      className="w-full h-64 object-cover"
+                      onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400'; }}
+                    />
+                }
+              </div>
+
+              <div className="grow p-[15px]">
+                <h3 className='text-xl mb-1 text-[#105f4e] font-semibold'>{post.blogTitle}</h3>
+                <p className="text-[#b9b9b9] font-light">{post.createdAt ? formatDate(post.createdAt) : 'Date not found'}</p>
+                <p className='leading-7 mb-4' dangerouslySetInnerHTML={{ __html: post.blogDescription?.substring(0, 100) + ' [...]' }} />
+
+                <div className='blog-status mb-2'>
+                  <Link
+                    to={`/blogdetail/${post.id}`}
+                    state={{ post }}
+                    className='status text-[#007bff] inline-block hover:underline'
+                    onClick={() => window.scrollTo(0, 0)}
+                  >
+                    Read more
+                  </Link>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <button className="bg-transparent text-gray-400" onClick={() => handleLike(post.id)}>
+                    <i className="fa-regular fa-heart text-[brown]"></i> {post.likeCount}
+                  </button>
+
+                  <button className="bg-transparent text-gray-400" onClick={() => toggleShareButtons(index)}>
+                    <i className="fa-solid fa-share-nodes text-[#0888b3]"></i> {post.shareCount}
+                  </button>
+
+                  {isShareVisible[index] && (
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={() => handleShare(post.id, post.blogTitle, 'facebook')}>
+                        <i className="fa-brands fa-facebook"></i>
+                      </button>
+                      <button onClick={() => handleShare(post.id, post.blogTitle, 'twitter')}>
+                        <i className="fa-brands fa-twitter"></i>
+                      </button>
+                      <button onClick={() => handleShare(post.id, post.blogTitle, 'email')}>
+                        <i className="fa-solid fa-envelope"></i>
+                      </button>
+                      <button onClick={() => handleShare(post.id, post.blogTitle, 'telegram')}>
+                        <i className="fa-brands fa-telegram"></i>
+                      </button>
+                    </div>
                   )}
                 </div>
-                <div className="grow p-[15px]">
-                  <h3 className='text-xl mb-1 text-[#105f4e] font-semibold'>{title || 'Title Not Available'}</h3>
-                  <p className="text-[#b9b9b9] font-light">{date}</p>
-                  <p className='leading-7 mb-4'
-                    dangerouslySetInnerHTML={{
-                      __html: detail ? detail.substring(0, 100) + ' [...]' : 'Detail not available'
-                    }}
-                  />
-                  <div className='blog-status'>
-                    <Link
-                      to="/blogdetail"
-                      state={{
-                        mediaSrc,
-                        mediaType,
-                        title,
-                        detail,
-                        dates: date,
-                        likeCount: likeCounts[index],
-                        shareCount: shareCounts[index],
-                      }}
-                      className='status text-[#007bff] inline-block hover:underline'
-                      onClick={() => window.scrollTo(0, 0)}
-                    >
-                      Read more
-                    </Link>
-                  </div>
-                  <div className="likes">
-                    <button className="bg-transparent hover:bg-transparent text-gray-400" onClick={() => handleLike(index)}>
-                      <i className="fa-regular fa-heart text-[brown]"></i> {totalLikesForBlog(index)}
-                    </button>
-                    <button className="bg-transparent hover:bg-transparent text-gray-400" onClick={() => toggleShareButtons(index)}>
-                        <i className="fa-solid fa-share-nodes text-[#0888b3]"></i> {shareCounts[index]}
-                      </button>
-                    <div>
-                      {isShareVisible[index] && (
-                        <div className="share-buttons">
-                          <button onClick={() => handleShare(index, title, window.location.href, 'facebook')}>
-                            <i className="fa-brands fa-facebook"></i>
-                          </button>
-                          <button onClick={() => handleShare(index, title, window.location.href, 'twitter')}>
-                            <i className="fa-brands fa-twitter"></i>
-                          </button>
-                          <button onClick={() => handleShare(index, title, window.location.href, 'email')}>
-                            <i className="fa-solid fa-envelope"></i>
-                          </button>
-                          <button onClick={() => handleShare(index, title, window.location.href, 'telegram')}>
-                            <i className="fa-brands fa-telegram"></i>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
+              </div>
+            </motion.div>
+          ))}
         </div>
       </section>
 
       <motion.div
-                id="contactus"
-                initial={{ opacity: 0, y: 200 }}
-                animate={{ opacity: 1, y: 0 }} // You need to define your animation logic based on a state or prop
-                transition={{ duration: 0.5 }}
-                className="bg-[#f8f9fa]"
-            >
-                <Contacts />
+        id="contactus"
+        initial={{ opacity: 0, y: 200 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-[#f8f9fa]"
+      >
+        <Contacts />
       </motion.div>
       <Footer />
     </section>

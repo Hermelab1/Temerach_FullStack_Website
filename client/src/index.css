@@ -14,7 +14,20 @@ body {
 section{
   @apply relative overflow-hidden h-auto;
 }
-
+.adminsection{
+  @apply container flex gap-5 my-4 justify-center h-[80vh] text-[0.9em]
+}
+.card1{
+  @apply w-[95%]  border bg-white shadow-sm relative;
+}
+.card2{
+  @apply bg-white border-2 w-[30%]  p-4 shadow-sm overflow-y-auto h-[80vh];
+}
+.card2 form input,
+.card2 form select,
+.card2 form textarea {
+  @apply border border-solid border-gray-500 rounded-md;
+}
 .pages a{
   font-family: 'Poppins', sans-serif;
 }

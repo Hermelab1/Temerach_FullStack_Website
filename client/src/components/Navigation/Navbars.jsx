@@ -9,7 +9,7 @@ const Header = () => {
     const location = useLocation(); // Get the current location
 
     // Check if current path matches admin paths
-    const isInAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/login');
+    const isInAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/login') || location.pathname.startsWith('/payment');
 
     // If the user is on an admin path, return null (which means render nothing)
     if (isInAdminPath) {

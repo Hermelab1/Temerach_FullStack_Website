@@ -6,13 +6,16 @@ import img2 from '../../asset/img/HeadingImages/CompanyPhoto2.webp';
 import photo1 from '../../asset/img/ManagementImages/bothmanager.webp';
 import Heading from '../Home/headings';
 import Footer from '../footage/footage';
-import { management } from '../data/management';
-import { teammembers } from '../data/teammembers';
 import Contacts from '../contact/contacts';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules'; 
 import 'swiper/swiper-bundle.css';
 
+// Define your API base URL and Image source here
+const API_URL = 'http://localhost:4001/api';
+const ImageSource = 'http://localhost:4001';
+
+// Helper functions
 const getElementRect = (id) => {
   const element = document.getElementById(id);
   return element ? element.getBoundingClientRect() : null;
@@ -40,6 +43,8 @@ const OurStoryDetail = ({ interval = 3000 }) => {
     contact: false,
     footer: false,
   });
+  const [management, setManagement] = useState([]); // State for leaders
+  const [teammembers, setTeamMembers] = useState([]); // State for team members
   const imgRef = useRef(null);
 
   useEffect(() => {
@@ -50,23 +55,31 @@ const OurStoryDetail = ({ interval = 3000 }) => {
   }, [interval]);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        observer.disconnect();
-      }
-    });
-
-    const currentImgRef = imgRef.current;
-
-    if (currentImgRef) {
-      observer.observe(currentImgRef);
-    }
-
-    return () => {
-      if (currentImgRef) {
-        observer.unobserve(currentImgRef);
+    const fetchManagement = async () => {
+      try {
+        const response = await fetch(`${API_URL}/employeebycat`);
+        const data = await response.json();
+        setManagement(data); // Set the leaders state from API
+      } catch (error) {
+        console.error('Failed to fetch leaders:', error);
       }
     };
+
+    fetchManagement();
+  }, []);
+
+  useEffect(() => {
+    const fetchTeamMembers = async () => {
+      try {
+        const response = await fetch(`${API_URL}/activeemployee`);
+        const data = await response.json();
+        setTeamMembers(data); // Set the team members state from API
+      } catch (error) {
+        console.error('Failed to fetch team members:', error);
+      }
+    };
+
+    fetchTeamMembers();
   }, []);
 
   const handleScroll = () => {
@@ -131,6 +144,7 @@ const OurStoryDetail = ({ interval = 3000 }) => {
           </motion.div>
         </div>
       </section>
+      
       <section className='bg-[#f8f9fa] flex justify-center items-center'>
         <motion.div
           id="leaders"
@@ -164,11 +178,11 @@ const OurStoryDetail = ({ interval = 3000 }) => {
                 <SwiperSlide key={`founder-${index}`} className="flex justify-center items-center">
                   <div className="w-full lg:w-[85%]">
                     <div className="flex justify-center items-center md:p-1 p-0">
-                      <img src={founder.photo} alt={`Founder ${founder.name}`} className="lg:w-[55%] lg:h-[35vh] maxm:h-[25vh] slg:h-[25vh] w-[60%] h-[33vh] object-cover border border-white shadow-custom mx-auto" />
+                      <img src={`${ImageSource}${founder.EmpImage}`} alt={`Founder ${founder.FullName}`} className="lg:w-[55%] lg:h-[35vh] maxm:h-[25vh] slg:h-[25vh] w-[60%] h-[33vh] object-cover border border-white shadow-custom mx-auto" />
                     </div>
                     <div className='aboutF-text text-center p-2'>
-                      <h2 className="text-[25px] font-bold tracking-wide text-[#105f4e] p-2 m-2">{founder.name}</h2>
-                      <p className='mb-4'>{founder.text}</p>
+                      <h2 className="text-[25px] font-bold tracking-wide text-[#105f4e] p-2 m-2">{founder.FullName}</h2>
+                      <p className='mb-4'>{founder.Memo}</p>
                     </div>
                   </div>
                 </SwiperSlide>
@@ -214,16 +228,15 @@ const OurStoryDetail = ({ interval = 3000 }) => {
               {teammembers.map((member, index) => (
                 <SwiperSlide key={`teammember-${index}`}>
                   <div className="border-2 border-gray-200 shadow-custom relative h-[45vh] 2xl:h-[45vh] xl:h-[40vh] lg:h-[52vh]  md:h-[35vh] mb-16">
-                    <img src={member.photo} alt={member.name} className="w-full h-full object-cover" />
+                    <img src={`${ImageSource}${member.EmpImage}`} alt={member.FullName} className="w-full h-full object-cover" />
                     <div className="bg-[#391f11] bg-opacity-75 text-white text-center absolute bottom-0 left-0 w-full p-2 ">
-                      <h2 className='font-semibold text-[1.2rem]'>{member.name}</h2>
-                      <p className='text-center text-white text-[0.97rem]'>{member.position}</p>
+                      <h2 className='font-semibold text-[1.2rem]'>{member.FullName}</h2>
+                      <p className='text-center text-white text-[0.97rem]'>{member.Positions}</p>
                     </div>
                   </div>
                 </SwiperSlide>
               ))}
             </Swiper>
-
           </motion.div>
         </div>
       </section>

@@ -1,50 +1,81 @@
-const jwt = require('jsonwebtoken');
-const db = require('../routes/db'); // Import your database connection
+const jwt = require("jsonwebtoken");
+const db = require("../config/db");
+require("dotenv").config();
 
-// Middleware to verify token
-const verifyToken = async (req, res, next) => {
-    const token = req.headers['authorization']?.split(' ')[1]; // Assuming Bearer token
-    
-    if (!token) {
-        return res.status(403).send({ message: 'No token provided!' });
-    }
+const SYSTEM_ADMIN_ROLE_ID = 1;
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Ensure you have a JWT secret in your environment variables
-        req.userId = decoded.id; // Store user ID for future use
-        req.roleId = decoded.roleId; // Store role ID (if included in token)
-        next();
-    } catch (error) {
-        return res.status(401).send({ message: 'Unauthorized!' });
-    }
+const publicRoutes = [
+  "/api/addcontactus"
+];
+
+const verifyToken = (req, res, next) => {
+  if (req.method === "GET" || publicRoutes.includes(req.path)) {
+    return next();
+  }
+
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) return res.status(403).json({ message: "No token provided." });
+
+  const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : authHeader;
+  if (!token) return res.status(403).json({ message: "Token missing." });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(401).json({ message: "Unauthorized: Invalid token." });
+
+    req.user = {
+      id: decoded.id,
+      roleId: decoded.roleId,
+      username: decoded.username,
+    };
+    next();
+  });
 };
 
-// Middleware to check permissions
+/* ================= PERMISSION CHECK ================= */
 const hasPermission = async (req, res, next) => {
-    const { originalUrl, method } = req;
-    const roleId = req.roleId;
-    
+  // Skip permission check for GET requests and public routes
+  if (req.method === "GET" || publicRoutes.includes(req.path)) {
+    return next();
+  }
+
+  try {
+    const { path, method } = req;
+    const { roleId, username } = req.user || {};
+
+    if (!username) return res.status(403).json({ message: "User not authenticated." });
+
+    // System admin bypass
+    if (roleId === SYSTEM_ADMIN_ROLE_ID) return next();
+
+    const connection = await db.getConnection();
+
     try {
-        const connection = await db();
-        const [rows] = await connection.execute(
-            'SELECT * FROM roles_permissions WHERE RoleId = ? AND Endpoint = ? AND HttpMethod = ?',
-            [roleId, originalUrl, method]
-        );
+      const [permissions] = await connection.execute(
+        "SELECT Endpoint, HttpMethod FROM roles_permissions WHERE RoleId = ? AND HttpMethod = ?",
+        [roleId, method]
+      );
 
-        await connection.end();
+      const allowed = permissions.some((perm) => {
+        const endpointRegex = perm.Endpoint.replace(/:[^\s/]+/g, "[^/]+").replace(/\/$/, '');
+        const regex = new RegExp(`^${endpointRegex}$`);
+        return regex.test(path.replace(/\/$/, ''));
+      });
 
-        if (rows.length === 0) {
-            return res.status(403).send({ message: 'Forbidden: You lack necessary permissions.' });
-        }
+      if (!allowed) {
+        return res.status(403).json({
+          message: `Forbidden: User "${username}" lacks permission for ${method} ${path}.`
+        });
+      }
 
-        next(); // User is authorized; continue to the next middleware or route handler
-    } catch (error) {
-        console.error('Error checking permissions:', error);
-        res.status(500).send({ message: 'Internal server error while checking permissions.' });
+      next();
+    } finally {
+      connection.release();
     }
+
+  } catch (err) {
+    console.error("Permission check error:", err);
+    res.status(500).json({ message: "Internal server error during permission check." });
+  }
 };
 
-module.exports = {
-    verifyToken,
-    hasPermission
-};
+module.exports = { verifyToken, hasPermission };

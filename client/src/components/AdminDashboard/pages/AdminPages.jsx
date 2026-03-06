@@ -4,28 +4,33 @@ import Dashboard from '../Dashboard';
 import BlogAdd from '../BlogAdd';
 import EmployeeAdd from '../EmployeeAdd';
 import CategoriesAdd from '../CategoriesAdd';
-import ItemAdd from '../ItemAdd';
-import OurTouchAdd from '../OurTouchAdd';
 import TestimonialAdd from '../TestimonialAdd';
 import ContactUsHistory from '../ContactUsHistory';
+import Ordes from '../orderAdd';
 import UserAdd from '../UserAdd';
 import RoleAdd from '../RoleAdd';
+import Payment from '../payment';
+import Currency from '../Currency';
+import WithUsername from './WithUsername'; // Adjust the path if necessary
 
-const AdminPages = () => {
+const AdminPages = ({ username }) => {
     return (
         <Routes>
             {/* Default route */}
             <Route path="/" element={<Navigate to="/admin" />} />
-            <Route path="/admin" element={<Dashboard />} />
-            <Route path="/admin/addblog" element={<BlogAdd />} />
-            <Route path="/admin/addemployee" element={<EmployeeAdd />} />
-            <Route path="/admin/addcategories" element={<CategoriesAdd />} />
-            <Route path="/admin/additems" element={<ItemAdd />} />
-            <Route path="/admin/addourtouch" element={<OurTouchAdd />} />
-            <Route path="/admin/addtestimonial" element={<TestimonialAdd />} />
-            <Route path="/admin/contactushistory" element={<ContactUsHistory />} />
-            <Route path="/admin/addusers" element={<UserAdd />} />
-            <Route path="/admin/addroles" element={<RoleAdd />} />
+            <Route path="/admin" element={<Dashboard username={username} />} />
+            <Route path="/admin/addblog" element={<WithUsername Component={BlogAdd} username={username} />} />
+            <Route path="/admin/addemployee" element={<WithUsername Component={EmployeeAdd} username={username} />} />
+            <Route path="/admin/addcategories" element={<WithUsername Component={CategoriesAdd} username={username} />} />
+            <Route path="/admin/addtestimonial" element={<WithUsername Component={TestimonialAdd} username={username} />} />
+            <Route path="/admin/contactushistory" element={<WithUsername Component={ContactUsHistory} username={username} />} />
+            <Route path="/admin/orders" element={<WithUsername Component={Ordes} username={username} />} />
+            <Route path="/admin/payment" element={<WithUsername Component={Payment} username={username} />} />
+            <Route path="/admin/currency" element={<WithUsername Component={Currency} username={username} />}/>
+
+            <Route path="/admin/addusers" element={<WithUsername Component={UserAdd} username={username} />} />
+            <Route path="/admin/addroles" element={<WithUsername Component={RoleAdd} username={username} />} />
+
         </Routes>
     );
 };
