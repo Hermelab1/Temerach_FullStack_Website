@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       code: {
         type: DataTypes.STRING(10),
         allowNull: false,
-        unique: true, // USD, EUR, etc.
+        unique: true,
       },
 
       name: {
@@ -21,13 +21,18 @@ module.exports = (sequelize, DataTypes) => {
 
       symbol: {
         type: DataTypes.STRING(10),
-        allowNull: false, // $, €, £
+        allowNull: false,
       },
 
-      rateToETB: {
+      rate: {
         type: DataTypes.DECIMAL(18, 6),
         allowNull: false,
-        defaultValue: 1.0, // Relative to USD
+        defaultValue: 1.0,
+      },
+
+      isDefault:{
+        type: DataTypes.BOOLEAN,
+        default:false,
       },
 
       isActive: {

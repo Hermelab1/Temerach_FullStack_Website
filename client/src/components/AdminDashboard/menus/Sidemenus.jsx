@@ -28,6 +28,7 @@ const SideMenu = ({ onMenuSelect }) => {
           return (
             <div key={index} className="space-y-1">
               {item.path ? (
+                /* Single Link Item (Dashboard) */
                 <Link
                   to={item.path}
                   onClick={() => onMenuSelect(item.title)}
@@ -35,26 +36,31 @@ const SideMenu = ({ onMenuSelect }) => {
                     isActive ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white'
                   }`}
                 >
-                  <span className="font-medium">{item.title}</span>
+                  <i className={`${item.icon} w-6 text-center mr-3`}></i>
+                  <span className="font-medium text-sm">{item.title}</span>
                 </Link>
               ) : (
+                /* Collapsible Menu Item */
                 <button
                   onClick={() => toggleSubMenu(index, item.title)}
                   className="w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-slate-800 bg-transparent transition-colors group"
                 >
-                  <span className="font-medium">{item.title}</span>
-                  <i className={`fa-solid fa-chevron-right text-xs transition-transform ${openSubMenu === index ? 'rotate-90' : ''}`} />
+                  <div className="flex items-center">
+                    <i className={`${item.icon} w-6 text-center mr-3 group-hover:text-blue-400`}></i>
+                    <span className="font-medium text-sm">{item.title}</span>
+                  </div>
+                  <i className={`fa-solid fa-chevron-right text-[10px] transition-transform ${openSubMenu === index ? 'rotate-90' : ''}`} />
                 </button>
               )}
 
               {/* Submenu Logic */}
               {hasSubmenu && openSubMenu === index && (
-                <div className="ml-4 mt-1 space-y-1 border-l border-slate-700">
+                <div className="ml-9 mt-1 space-y-1 border-l border-slate-700">
                   {item.submenu.map((sub, i) => (
                     <Link
                       key={i}
                       to={sub.path}
-                      className="block px-6 py-2 text-sm hover:text-yellow-400 text-white transition-colors"
+                      className="block px-6 py-2 text-xs hover:text-blue-400 text-slate-400 transition-colors"
                     >
                       {sub.title}
                     </Link>

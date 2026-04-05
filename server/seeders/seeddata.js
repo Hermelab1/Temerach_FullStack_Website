@@ -1,77 +1,86 @@
-const bcrypt = require('bcrypt');
-const db = require('../models');
+const bcrypt = require("bcrypt");
+const db = require("../models");
 
-const SYSTEM_ADMIN_ROLE_NAME = 'SystemAdmin';
+const SYSTEM_ADMIN_ROLE_NAME = "SystemAdmin";
 
-module.exports = async function seedAdmin() {
+module.exports = async function seedAll() {
   try {
     /* ---------------------------
        1. Create SystemAdmin Role
     ----------------------------*/
     let role = await db.secrole.findOne({
-      where: { roleName: SYSTEM_ADMIN_ROLE_NAME }
+      where: { roleName: SYSTEM_ADMIN_ROLE_NAME },
     });
 
     if (!role) {
       role = await db.secrole.create({
         roleName: SYSTEM_ADMIN_ROLE_NAME,
-        description: 'System administrator with full access'
+        description: "System administrator with full access",
       });
-      console.log('✅ SystemAdmin role created');
+      console.log("✅ SystemAdmin role created");
     }
 
     /* ---------------------------
        2. Create SystemAdmin User
     ----------------------------*/
     let user = await db.secuser.findOne({
-      where: { username: 'systemadmin' }
+      where: { username: "systemadmin" },
     });
 
     if (!user) {
-      const hashedPassword = await bcrypt.hash('Admin@123', 10);
+      const hashedPassword = await bcrypt.hash("Admin@123", 10);
 
-      await db.secuser.create({
-        username: 'systemadmin',
-        email: 'admin@system.local',
+      user = await db.secuser.create({
+        username: "systemadmin",
+        email: "admin@system.local",
         password: hashedPassword,
-        roleId: role.id,
-        isActive: true
+        isActive: true,
       });
 
-      console.log('✅ SystemAdmin user created');
+      console.log("✅ SystemAdmin user created");
     }
 
     /* ---------------------------
-       3. Seed ALL Permissions
+       3. Link User to Role
     ----------------------------*/
-    const permissions = [
-      { Endpoint: '/.*', HttpMethod: 'GET' },
-      { Endpoint: '/.*', HttpMethod: 'POST' },
-      { Endpoint: '/.*', HttpMethod: 'PUT' },
-      { Endpoint: '/.*', HttpMethod: 'DELETE' }
-    ];
+    const userRole = await db.usermember.findOne({
+      where: {
+        RoleId: role.id,
+        UserId: user.id,
+      },
+    });
 
-    for (const perm of permissions) {
-      const exists = await db.roles_permissions.findOne({
+    if (!userRole) {
+      await db.usermember.create({
+        RoleId: role.id,
+        UserId: user.id,
+      });
+      console.log("✅ SystemAdmin role assigned to user");
+    }
+
+    /* ---------------------------
+       7. Seed RolePermissions (SystemAdmin gets all)
+    ----------------------------*/
+    const modulePermissions = await db.modulepermission.findAll();
+
+    for (const mp of modulePermissions) {
+      const exists = await db.rolespermissions.findOne({
         where: {
           RoleId: role.id,
-          Endpoint: perm.Endpoint,
-          HttpMethod: perm.HttpMethod
-        }
+          PermissionId: mp.id,
+        },
       });
-
       if (!exists) {
-        await db.roles_permissions.create({
+        await db.rolespermissions.create({
           RoleId: role.id,
-          Endpoint: perm.Endpoint,
-          HttpMethod: perm.HttpMethod
+          PermissionId: mp.id,
         });
       }
     }
 
-    console.log('✅ SystemAdmin permissions seeded');
+    console.log("✅ SystemAdmin role permissions seeded");
 
   } catch (err) {
-    console.error('❌ Seed error:', err);
+    console.error("❌ Seeder error:", err);
   }
 };

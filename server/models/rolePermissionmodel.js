@@ -1,20 +1,39 @@
 module.exports = (sequelize, DataTypes) => {
   const RolePermission = sequelize.define(
-    'roles_permissions',
+    "rolespermissions",
     {
       id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-      RoleId: { type: DataTypes.INTEGER, allowNull: false },
-      Endpoint: { type: DataTypes.STRING, allowNull: false },
-      HttpMethod: { type: DataTypes.STRING(10), allowNull: false } // GET, POST, PUT, DELETE
+
+      RoleId: { 
+        type: DataTypes.INTEGER, 
+        allowNull: false 
+      },
+
+      PermissionId: { 
+        type: DataTypes.INTEGER, 
+        allowNull: false 
+      }
     },
     {
-      tableName: 'roles_permissions',
+      tableName: "rolespermissions",
       timestamps: false
     }
   );
 
   RolePermission.associate = (models) => {
-    RolePermission.belongsTo(models.secrole, { foreignKey: 'RoleId', as: 'role' });
+
+    // Role
+    RolePermission.belongsTo(models.secrole, {
+      foreignKey: "RoleId",
+      as: "role"
+    });
+
+    // Permission
+    RolePermission.belongsTo(models.modulepermission, {
+      foreignKey: "PermissionId",
+      as: "permission"
+    });
+
   };
 
   return RolePermission;

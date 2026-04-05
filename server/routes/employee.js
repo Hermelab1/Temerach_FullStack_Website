@@ -7,45 +7,24 @@ const {
   addEmployee,
   getAllEmployees,
   getEmployeeById,
+  getActiveEmployee,
   updateEmployee,
   deleteEmployee,
+  getEmployeesByCategory,
   upload,
 } = require("../controller/employeeController");
 
-
 // ================= PUBLIC ROUTES =================
-
-// 🔓 NO TOKEN REQUIRED
+// Ensure these have NO middleware like verifyToken
 router.get("/employees", getAllEmployees);
 router.get("/employee/:id", getEmployeeById);
-
+router.get("/activeemployee", getActiveEmployee);
+router.get("/employeebycat", getEmployeesByCategory); // Add this one for your story page
 
 // ================= PROTECTED ROUTES =================
-
-// 🔒 CREATE
-router.post(
-  "/addemployee",
-  verifyToken,
-  hasPermission,
-  upload.single("profileImage"),
-  addEmployee
-);
-
-// 🔒 UPDATE
-router.put(
-  "/updateemployee/:id",
-  verifyToken,
-  hasPermission,
-  upload.single("profileImage"),
-  updateEmployee
-);
-
-// 🔒 DELETE
-router.delete(
-  "/employees/:id",
-  verifyToken,
-  hasPermission,
-  deleteEmployee
-);
+// Only routes that CHANGE data (POST, PUT, DELETE) should have verifyToken
+router.post("/addemployee", verifyToken, hasPermission, upload.single("profileImage"), addEmployee);
+router.put("/updateemployee/:id", verifyToken, hasPermission, upload.single("profileImage"), updateEmployee);
+router.delete("/employees/:id", verifyToken, hasPermission, deleteEmployee);
 
 module.exports = router;

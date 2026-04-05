@@ -14,25 +14,87 @@ async function getAllUser(req, res) {
 async function registerUser(req, res) {
   const { username, email, password, roleId } = req.body;
 
+  // 1. Validation
   if (!username || !email || !password || !roleId) {
-    return res.status(400).json({ message: 'All fields required' });
+    return res.status(400).json({ success: false, message: 'All fields are required' });
   }
 
-  const exists = await db.secuser.findOne({ where: { username } });
-  if (exists) {
-    return res.status(409).json({ message: 'Username exists' });
+  // Start a transaction to ensure both inserts succeed or both fail
+  const t = await db.sequelize.transaction();
+
+  try {
+    // 2. Check if user already exists
+    const exists = await db.secuser.findOne({ 
+      where: { [Op.or]: [{ username }, { email }] } 
+    });
+
+    if (exists) {
+      await t.rollback();
+      return res.status(409).json({ success: false, message: 'Username or Email already exists' });
+    }
+
+    // 3. Hash Password
+    const hash = await bcrypt.hash(password, 10);
+
+    // 4. Create User in 'secusers' table
+    const newUser = await db.secuser.create({
+      username,
+      email,
+      password: hash,
+      isActive: true
+    }, { transaction: t });
+
+    // 5. Create Entry in 'usermember' table (Linking User to Role)
+    await db.usermember.create({
+      UserId: newUser.id,
+      RoleId: roleId
+    }, { transaction: t });
+
+    // Commit the changes
+    await t.commit();
+
+    // 6. Fetch the complete user with Role info to send back to Frontend
+    const createdUser = await db.secuser.findByPk(newUser.id, {
+      attributes: { exclude: ['password'] },
+      include: [{
+        model: db.usermember,
+        as: 'roles',
+        include: [{ model: db.secrole, as: 'role' }]
+      }]
+    });
+
+    // Flatten the response so it matches your frontend's "user.Role.roleName" logic
+    const userJson = createdUser.toJSON();
+    // Providing a fallback for the UI logic: user.Role.roleName
+    userJson.Role = userJson.roles[0]?.role || { roleName: "Standard User" };
+
+    res.status(201).json({ 
+      success: true, 
+      user: userJson,
+      message: "User and Role assigned successfully" 
+    });
+
+  } catch (err) {
+    // Rollback transaction on any error
+    await t.rollback();
+    console.error("Registration Error:", err);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
+}
 
-  const hash = await bcrypt.hash(password, 10);
+async function deleteUser(req, res) {
+  await db.secuser.destroy({ where: { id: req.params.id } });
+  res.json({ success: true });
+}
 
-  await db.secuser.create({
-    username,
-    email,
-    password: hash,
-    roleId
-  });
+async function updateUser(req, res) {
+  const { username, email, password, roleId } = req.body;
+  const updateData = { username, email, roleId };
+  if (password) updateData.password = await bcrypt.hash(password, 10);
 
-  res.status(201).json({ success: true });
+  await db.secuser.update(updateData, { where: { id: req.params.id } });
+  const updated = await db.secuser.findByPk(req.params.id, { include: ['Role'] });
+  res.json({ success: true, user: updated });
 }
 
 async function postlogin(req, res) {
@@ -61,4 +123,4 @@ async function postlogin(req, res) {
   res.json({ token });
 }
 
-module.exports = { getAllUser, registerUser, postlogin };
+module.exports = { getAllUser, registerUser, postlogin, deleteUser, updateUser };

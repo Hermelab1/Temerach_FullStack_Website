@@ -34,8 +34,11 @@ const BlogDetail = () => {
   }, [id, blog]);
 
   // Increment view count automatically
-  useEffect(() => {
+useEffect(() => {
     const incrementView = async () => {
+      // FIX: Guard against undefined ID
+      if (!id || id === "undefined") return; 
+
       try {
         await axios.put(`${API}/blogs/${id}/view`);
         // Optionally update local viewCount
@@ -118,7 +121,7 @@ const BlogDetail = () => {
         </div>
 
         <div className="prose lg:prose-xl mx-auto my-4">
-          <p dangerouslySetInnerHTML={{ __html: blog.blogDescription || 'No detail found' }} />
+          <p className='leading-relaxed whitespace-pre-wrap' dangerouslySetInnerHTML={{ __html: blog.blogDescription || 'No detail found' }} />
         </div>
 
         <div className="flex space-x-4 mt-4">

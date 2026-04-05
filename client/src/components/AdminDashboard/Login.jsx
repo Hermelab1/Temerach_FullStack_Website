@@ -121,7 +121,7 @@ const AuthPage = () => {
         <footer className="mt-6 text-center">
           <button 
             onClick={toggleMode}
-            className="text-sm font-medium text-blue-600 hover:text-blue-500 transition"
+            className="text-sm font-medium text-blue-600 bg-transparent hover:bg-transparent hover:text-blue-500 transition"
           >
             {isRegistering ? 'Already have an account? Log in' : "Don't have an account? Register"}
           </button>

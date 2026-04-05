@@ -139,12 +139,12 @@ const Blog = () => {
 
               <div className="grow p-[15px]">
                 <h3 className='text-xl mb-1 text-[#105f4e] font-semibold'>{post.blogTitle}</h3>
-                <p className="text-[#b9b9b9] font-light">{post.createdAt ? formatDate(post.createdAt) : 'Date not found'}</p>
+                <p className="text-[#b9b9b9] font-light">{post.bologdate ? formatDate(post.bologdate) : 'Date not found'}</p>
                 <p className='leading-7 mb-4' dangerouslySetInnerHTML={{ __html: post.blogDescription?.substring(0, 100) + ' [...]' }} />
 
                 <div className='blog-status mb-2'>
                   <Link
-                    to={`/blogdetail/${post.id}`}
+                    to={`/blogdetail/${post.blogTitle.replace(/\s+/g, '-').toLowerCase()}`}
                     state={{ post }}
                     className='status text-[#007bff] inline-block hover:underline'
                     onClick={() => window.scrollTo(0, 0)}

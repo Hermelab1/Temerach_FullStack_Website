@@ -14,15 +14,12 @@ async function getAllCategory(req, res) {
 
 async function addCategory(req, res) {
     try {
-        const { categoryName, categoryDescription, isActive } = req.body;
-
-        // Check for duplicates manually (Sequelize will also catch this due to 'unique: true')
-        const existing = await db.Category.findOne({ where: { categoryName } });
-        if (existing) return res.status(400).json({ message: "Category name already exists" });
+        const { categoryName, categoryDescription, subCategory, isActive } = req.body;
 
         const newCategory = await db.Category.create({
             categoryName,
             categoryDescription,
+            subCategory,
             isActive: isActive !== undefined ? isActive : true
         });
 
@@ -36,7 +33,7 @@ async function addCategory(req, res) {
 async function updateCategory(req, res) {
     try {
         const { id } = req.params;
-        const { categoryName, categoryDescription, isActive } = req.body;
+        const { categoryName, categoryDescription, subCategory, isActive } = req.body;
 
         const category = await db.Category.findByPk(id);
         if (!category) return res.status(404).json({ message: "Not found" });
@@ -44,6 +41,7 @@ async function updateCategory(req, res) {
         await category.update({
             categoryName: categoryName || category.categoryName,
             categoryDescription: categoryDescription || category.categoryDescription,
+            subCategory: subCategory || category.subCategory,
             isActive: isActive !== undefined ? isActive : category.isActive
         });
 
@@ -54,4 +52,17 @@ async function updateCategory(req, res) {
     }
 }
 
-module.exports = { getAllCategory, addCategory, updateCategory };
+async function getActiveCategory(req, res) {
+    try {
+        const activeCategories = await db.Category.findAll({
+            where: { isActive: true },
+            order: [["createdAt", "DESC"]],
+        });
+        res.json(activeCategories);
+    } catch (error) {
+        console.error("DETAILED ACTIVE FETCH ERROR:", error);
+        res.status(500).json({ message: "Failed to fetch active categories", error: error.message });
+    }
+}
+
+module.exports = { getAllCategory, addCategory, updateCategory, getActiveCategory };

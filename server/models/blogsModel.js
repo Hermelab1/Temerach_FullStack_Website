@@ -15,13 +15,18 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       blogTitle: {
-        type: DataTypes.STRING(50),
+        type: DataTypes.STRING(250),
         unique: true,
         allowNull: false,
       },
 
       blogDescription: {
         type: DataTypes.TEXT,
+        allowNull: false,
+      },
+
+      bologdate:{
+        type: DataTypes.DATE,
         allowNull: false,
       },
 

@@ -9,27 +9,45 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       categoryName: {
-        type: DataTypes.STRING, // no limit
+        type: DataTypes.STRING,
         allowNull: false,
-        unique: true,
+        unique: false,
       },
 
       categoryDescription: {
-        type: DataTypes.TEXT, // unlimited length
+        type: DataTypes.TEXT,
         allowNull: false,
       },
 
-      isActive: { 
-        type: DataTypes.BOOLEAN, // ✅ FIXED
+      subCategory: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      isActive: {
+        type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: true // also use defaultValue instead of default
+        defaultValue: true,
       },
     },
     {
       tableName: "categories",
-      timestamps: true, // createdAt & updatedAt
+      timestamps: true,
     }
   );
+
+  // Relationship
+  Category.associate = (models) => {
+    Category.hasMany(models.OrderDetail, {
+      foreignKey: "categoryId",
+      as: "orderDetails",
+    });
+      Category.hasMany(models.ItemPriceLevel, {
+    foreignKey: "categoryId",
+    as: "priceLevels",
+  });
+  };
+
 
   return Category;
 };

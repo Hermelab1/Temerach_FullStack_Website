@@ -33,39 +33,35 @@ const ContactUsDetail = () => {
   };
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      // Send data to the database
-      const response = await axios.post(`${API_URL}/addcontactus`);
+  try {
+    // FIX: Pass formData as the second argument here
+    const response = await axios.post(`${API_URL}/addcontactus`, formData);
 
-      if (response.status === 201) {
-        console.log('Data saved successfully');
-        alert('Message sent successfully!');
+    if (response.status === 201) {
+      console.log('Data saved successfully');
+      alert('Message sent successfully!');
 
-        // Send email via EmailJS
-        await emailjs.sendForm('service_w6blv2o', 'template_lb47k4j', form.current, 'Puv041KtiA_TZduH2');
-        console.log('Email sent successfully');
+      // Send email via EmailJS
+      await emailjs.sendForm('service_w6blv2o', 'template_lb47k4j', form.current, 'Puv041KtiA_TZduH2');
 
-        // Reset form
-        e.target.reset();
-        setFormData({
-          FullName: '',
-          CompanyName: '',
-          Phone: '',
-          Websites: '',
-          Email: '',
-          Memo: '',
-        });
-      } else {
-        throw new Error('Failed to save data');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Something went wrong. Please try again.');
+      // Reset form
+      setFormData({
+        FullName: '',
+        CompanyName: '',
+        Phone: '',
+        Websites: '',
+        Email: '',
+        Memo: '',
+      });
     }
-  };
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Something went wrong. Please try again.');
+  }
+};
 
   return (
     <>

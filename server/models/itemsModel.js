@@ -24,18 +24,32 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
 
-      price: {
-        type: DataTypes.DECIMAL(18, 2),
-        allowNull: false,
+      uomId: {
+        type: DataTypes.INTEGER,
+        allowNull: false
       },
-
       stockQty: {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
       },
 
+      imageUrl: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+
+      isTaxable: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+
       isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+      },
+
+      transactionAllowed: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
       },
@@ -45,6 +59,17 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
     }
   );
+
+  Item.associate = (models) => {
+    Item.belongsTo(models.UOM, {
+      foreignKey: "uomId",
+      as: "uom",
+    });
+     Item.hasMany(models.ItemPriceLevel, {
+    foreignKey: "itemId",
+    as: "priceLevels",
+  });
+  };
 
   return Item;
 };

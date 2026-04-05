@@ -12,4 +12,7 @@ router.post("/addcategory", verifyToken, hasPermission, categoryController.addCa
 // ================= UPDATE CATEGORY =================
 router.put("/updatecategory/:id", verifyToken, hasPermission, categoryController.updateCategory);
 
+// ================= Active CATEGORY =================
+router.get("/activecategory", categoryController.getActiveCategory);
+
 module.exports = router;

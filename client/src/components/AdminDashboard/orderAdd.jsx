@@ -6,8 +6,8 @@ const API_URL = 'http://localhost:4001/api';
 const OrderAdd = ({ username }) => {
   const [posts, setPosts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [postsPerPage] = useState(5);
-  const [expandedRows, setExpandedRows] = useState({}); // State to manage expanded rows
+  const [postsPerPage] = useState(8);
+  const [expandedRows, setExpandedRows] = useState({});
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -18,13 +18,12 @@ const OrderAdd = ({ username }) => {
       }
 
       try {
-        const response = await axios.get(`${API_URL}/orders`, {
+        const response = await axios.get(`${API_URL}/allorders`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setPosts(response.data);
       } catch (error) {
         console.error('Error fetching posts:', error);
-        alert(`Error fetching posts: ${error.response ? error.response.data.message : error.message}`);
         setPosts([]);
       }
     };
@@ -32,66 +31,76 @@ const OrderAdd = ({ username }) => {
     fetchPosts();
   }, []);
 
-  // Pagination logic
   const indexOfLastPost = currentPage * postsPerPage;
   const currentPosts = posts.slice(indexOfLastPost - postsPerPage, indexOfLastPost);
   const totalPages = Math.ceil(posts.length / postsPerPage);
 
-  const handleToggleRow = (orderId) => {
-    setExpandedRows((prev) => ({  
+  const handleToggleRow = (id) => {
+    setExpandedRows((prev) => ({
       ...prev,
-      [orderId]: !prev[orderId], // Toggle expanded state for the clicked orderId
+      [id]: !prev[id], // Use the 'id' property from your API
     }));
   };
 
   return (
-    <section className="adminsection">
-      <div className="card1">
-        <table className="min-w-full border border-gray-300">
+    <section className="">
+      <div className="card1 p-4">
+        <table className="min-w-full border border-gray-300 text-sm">
           <thead className="bg-gray-100">
             <tr>
-                <th className="border border-gray-300 px-2 py-2"></th>
-              <th className="border border-gray-300 px-4 py-2">ID</th>
-              <th className="border border-gray-300 px-4 py-2">Order Id</th>
+              <th className="border border-gray-300 px-2 py-2 w-10"></th>
+
+              <th className="border border-gray-300 px-4 py-2">Order Number</th>
               <th className="border border-gray-300 px-4 py-2">Ordered By</th>
-              <th className="border border-gray-300 px-4 py-2">Company Name</th>
-              <th className="border border-gray-300 px-4 py-2">Website</th>
+              <th className="border border-gray-300 px-4 py-2">Company</th>
               <th className="border border-gray-300 px-4 py-2">Email</th>
               <th className="border border-gray-300 px-2 py-2">Phone</th>
-              <th className="border border-gray-300 px-2 py-2">Address</th>
-
               <th className="border border-gray-300 px-2 py-2">Status</th>
-               {/* New column for details */}
             </tr>
           </thead>
           <tbody>
             {currentPosts.map((post) => (
               <React.Fragment key={post.id}>
-                <tr>
-                    <td className="border border-gray-300 px-4 py-2">
-                    <button className='bg-white hover:bg-white text-gray-600 text-bold' onClick={() => handleToggleRow(post.orderId)}>+</button>
+                <tr className={expandedRows[post.id] ? "bg-blue-50" : ""}>
+                  <td className="border border-gray-300 px-4 py-2 text-center">
+                    <button 
+                      className='font-bold text-blue-600 bg-transparent hover:bg-transparent' 
+                      onClick={() => handleToggleRow(post.id)}
+                    >
+                      {expandedRows[post.id] ? '−' : '+'}
+                    </button>
                   </td>
-                  <td className="border border-gray-300 px-4 py-2">{post.id}</td>
-                  <td className="border border-gray-300 px-4 py-2">{post.orderId}</td>
-                  <td className="border border-gray-300 px-4 py-2">{post.orderedBy}</td>
+                  <td className="border border-gray-300 px-4 py-2 font-mono">{post.orderNumber}</td>
+                  <td className="border border-gray-300 px-4 py-2">{post.customerName}</td>
                   <td className="border border-gray-300 px-4 py-2">{post.companyName}</td>
-                  <td className="border border-gray-300 px-4 py-2">{post.website}</td>
-                  <td className="border border-gray-300 px-4 py-2">{post.email}</td>
+                  <td className="border border-gray-300 px-4 py-2">{post.customerEmail}</td>
                   <td className="border border-gray-300 px-2 py-2">{post.phone}</td>
-                  <td className="border border-gray-300 px-2 py-2">{post.deliveryAddress}</td>
-                  <td className="border border-gray-300 px-2 py-2"> {post.status}</td>
+                  <td className="border border-gray-300 px-2 py-2 text-center">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                        {post.status}
+                    </span>
+                  </td>
                 </tr>
 
                 {/* Detail row */}
-                {expandedRows[post.orderId] && (
+                {expandedRows[post.id] && (
                   <tr>
-                    <td colSpan="11" className="border border-gray-300 px-4 py-2">
-                      <div>
-                        {/* Here you can customize the additional details that you want to show */}
-                        <p><strong>Orderd Date:</strong> {post.orderDate}</p>
-                        <p><strong>Coffee Grade:</strong> {post.coffeeGrade}</p>
-                        <p><strong>Quantity:</strong> {post.quantity}</p>
-                        <p><strong>Agree with Terms:</strong> {post.agreewithterms ? 'Yes' : 'No'}</p>
+                    <td colSpan="8" className="border border-gray-300 bg-gray-50 px-8 py-4">
+                      <div className="flex flex-col gap-2">
+                        <h4 className="font-bold border-b pb-1">Order Details</h4>
+                        <p><strong>Delivery Address:</strong> {post.deliveryAddress}</p>
+                        <p><strong>Total Amount:</strong> ${post.totalAmount}</p>
+                        
+                        <div className="mt-2">
+                            <p className="font-semibold mb-1 underline">Items:</p>
+                            <ul className="list-disc ml-5">
+                                {post.details.map((item) => (
+                                    <li key={item.id}>
+                                        Item ID: {item.itemId} — Qty: {item.quantity} @ ${item.unitprice} (Total: ${item.totalprice})
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -100,22 +109,43 @@ const OrderAdd = ({ username }) => {
             ))}
           </tbody>
         </table>
-        <div className="pagination absolute bottom-0 left-0 right-0 flex justify-center gap-6 mb-2">
-          <button 
-              className={`border border-gray-300 rounded px-2 py-1 ${currentPage === 1 ? 'cursor-not-allowed bg-gray-100 text-gray-600 hover:bg-gray-100 hover:text-gray-600' : 'bg-blue-500 text-white hover:bg-blue-500 hover:text-white'}`}
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-          >
-              <i className="fa-solid fa-arrow-left"></i>
-          </button>
-          <button 
-              className={`border border-gray-300 rounded px-2 py-1 ${currentPage === totalPages ? 'cursor-not-allowed bg-gray-100 text-gray-600 hover:bg-gray-100 hover:text-gray-600' : 'bg-blue-500 text-white hover:bg-blue-500 hover:text-white'}`}
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-          >
-              <i className="fa-solid fa-arrow-right"></i>
-          </button>
-        </div>
+        
+        {/* Pagination */}
+{/* Pagination */}
+<footer className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 mt-6">
+  
+  {/* Previous Button */}
+  <button
+    className={`px-4 py-2 rounded text-sm w-full sm:w-auto ${
+      currentPage === 1
+        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+        : 'bg-blue-500 text-white hover:bg-blue-600'
+    }`}
+    onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+    disabled={currentPage === 1}
+  >
+    Previous
+  </button>
+
+  {/* Page Info */}
+  <span className="text-sm text-gray-600 text-center">
+    Page {currentPage} of {totalPages}
+  </span>
+
+  {/* Next Button */}
+  <button
+    className={`px-4 py-2 rounded text-sm w-full sm:w-auto ${
+      currentPage === totalPages
+        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+        : 'bg-blue-500 text-white hover:bg-blue-600'
+    }`}
+    onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+    disabled={currentPage === totalPages}
+  >
+    Next
+  </button>
+
+</footer>
       </div>
     </section>
   );

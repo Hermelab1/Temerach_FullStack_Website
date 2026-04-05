@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import {getTestimonials, addTestimonial, updateTestimonial, IMAGE_URL} from '../API/apis'
 
-const API_URL = "http://localhost:4001/api";
-const IMAGE_URL = "http://localhost:4001/uploads/";
+
 
 const TestimonialAdd = () => {
   const navigate = useNavigate();
@@ -27,17 +26,11 @@ const TestimonialAdd = () => {
 
 
 const fetchTestimonials = useCallback(async () => {
-  // ❌ REMOVE OR COMMENT OUT THESE LINES:
-  // const token = localStorage.getItem("authToken");
-  // if (!token) {
-  //   navigate("/login");
-  //   return;
-  // }
-
+ 
   try {
     // This will now work without a token because the backend doesn't check for one
-    const res = await axios.get(`${API_URL}/alltestimonials`);
-    setItems(res.data || []);
+    const res = await getTestimonials();
+    setItems(res || []);
   } catch (err) {
     console.error("Fetch error:", err);
     setItems([]);
@@ -52,7 +45,6 @@ const handleSubmit = async (e) => {
   e.preventDefault();
   
   const token = localStorage.getItem("authToken");
-  // Check token ONLY when trying to save/update
   if (!token) {
     alert("You must be logged in to make changes.");
     navigate("/login");
@@ -61,19 +53,33 @@ const handleSubmit = async (e) => {
 
   setLoading(true);
   const fd = new FormData();
-  // ... (rest of your FormData code stays the same)
+
+  // --- ADD THESE LINES TO FILL THE FORMDATA ---
+  fd.append("name", formData.name);
+  fd.append("designation", formData.designation);
+  fd.append("message", formData.message);
+  fd.append("isActive", formData.isActive);
+
+  // Only append files if they exist (they are File objects from the input)
+  if (formData.companylogo) {
+    fd.append("companylogo", formData.companylogo);
+  }
+  if (formData.Flag) {
+    fd.append("Flag", formData.Flag);
+  }
+  // --------------------------------------------
 
   try {
     const url = isEditing 
-      ? `${API_URL}/updatetestimonials/${formData.id}` 
-      : `${API_URL}/addtestimonials`;
+      ? updateTestimonial(formData.id, fd, token)
+      : addTestimonial(fd, token);
     
-    await axios({
+    await ({
       method: isEditing ? "put" : "post",
       url: url,
       data: fd,
       headers: { 
-        Authorization: `Bearer ${token}`, // Token sent here for security
+        Authorization: `Bearer ${token}`,
         "Content-Type": "multipart/form-data" 
       },
     });
@@ -89,7 +95,6 @@ const handleSubmit = async (e) => {
     setLoading(false);
   }
 };
-
 
 
   /* ================= HANDLERS ================= */
@@ -253,7 +258,7 @@ const handleSubmit = async (e) => {
                   {expandedId === item.id ? item.message : item.message?.substring(0, 80) + "..."}
                   <button 
                     onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                    className="text-blue-500 ml-1 font-bold hover:underline"
+                    className="text-blue-500 ml-1 font-bold bg-transparent hover:bg-blue-100 transition-colors"
                   >
                     {expandedId === item.id ? "Show Less" : "Read More"}
                   </button>

@@ -35,7 +35,26 @@ async function addContactus(req, res) {
     }
 }
 
-// ... existing getContactus and addContactus code ...
+// Update read/unread status
+async function updatestatus(req, res) {
+    try {
+        const { id } = req.params;
+        const { isRead } = req.body;
+        const [updated] = await db.Contactus.update(
+            { isRead: isRead },
+            { where: { id: id } }
+        );
+        if (updated) {
+            const updatedEntry = await db.Contactus.findOne({ where: { id: id } });
+            res.status(200).json(updatedEntry);
+        } else {
+            res.status(404).json({ message: "Entry not found" });
+        }   
+    } catch (error) {
+        console.error("UPDATE ERROR:", error);
+        res.status(500).json({ message: "Failed to update entry", error: error.message });
+    }
+}
 
 // Delete an entry
 async function deleteContactus(req, res) {
@@ -56,4 +75,4 @@ async function deleteContactus(req, res) {
     }
 }
 
-module.exports = { getContactus, addContactus, deleteContactus };
+module.exports = { getContactus, addContactus, updatestatus, deleteContactus };

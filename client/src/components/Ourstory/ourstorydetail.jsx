@@ -11,11 +11,9 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules'; 
 import 'swiper/swiper-bundle.css';
 
-// Define your API base URL and Image source here
 const API_URL = 'http://localhost:4001/api';
 const ImageSource = 'http://localhost:4001';
 
-// Helper functions
 const getElementRect = (id) => {
   const element = document.getElementById(id);
   return element ? element.getBoundingClientRect() : null;
@@ -23,13 +21,10 @@ const getElementRect = (id) => {
 
 const useDebounce = (callback, delay) => {
   const timerRef = useRef(null);
-  const debouncedCallback = (...args) => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
+  return (...args) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => callback(...args), delay);
   };
-  return debouncedCallback;
 };
 
 const images = [img1, img, img2];
@@ -37,65 +32,48 @@ const images = [img1, img, img2];
 const OurStoryDetail = ({ interval = 3000 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visibleSections, setVisibleSections] = useState({
-    about: false,
-    leaders: false,
-    teamMembers: false,
-    contact: false,
-    footer: false,
+    about: false, leaders: false, teamMembers: false, contact: false, footer: false,
   });
-  const [management, setManagement] = useState([]); // State for leaders
-  const [teammembers, setTeamMembers] = useState([]); // State for team members
+  
+  // Initialize as empty arrays to prevent .map errors
+  const [management, setManagement] = useState([]); 
+  const [teammembers, setTeamMembers] = useState([]); 
   const imgRef = useRef(null);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+      setCurrentIndex((prevIdx) => (prevIdx + 1) % images.length);
     }, interval);
     return () => clearInterval(intervalId);
   }, [interval]);
 
   useEffect(() => {
-    const fetchManagement = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`${API_URL}/employeebycat`);
-        const data = await response.json();
-        setManagement(data); // Set the leaders state from API
+        const mgmtRes = await fetch(`${API_URL}/employeebycat`);
+        const mgmtData = await mgmtRes.json();
+        // Check if data is an array before setting state
+        setManagement(Array.isArray(mgmtData) ? mgmtData : []);
+
+        const teamRes = await fetch(`${API_URL}/activeemployee`);
+        const teamData = await teamRes.json();
+        setTeamMembers(Array.isArray(teamData) ? teamData : []);
       } catch (error) {
-        console.error('Failed to fetch leaders:', error);
+        console.error('Fetch error:', error);
       }
     };
-
-    fetchManagement();
-  }, []);
-
-  useEffect(() => {
-    const fetchTeamMembers = async () => {
-      try {
-        const response = await fetch(`${API_URL}/activeemployee`);
-        const data = await response.json();
-        setTeamMembers(data); // Set the team members state from API
-      } catch (error) {
-        console.error('Failed to fetch team members:', error);
-      }
-    };
-
-    fetchTeamMembers();
+    fetchData();
   }, []);
 
   const handleScroll = () => {
-    const aboutRect = getElementRect('ourhistory');
-    const leadersRect = getElementRect('leaders');
-    const teamMembersRect = getElementRect('teammembers');
-    const contactRect = getElementRect('contactus');
-    const footerRect = getElementRect('footer');
-
-    setVisibleSections({
-      about: aboutRect && aboutRect.top < window.innerHeight && aboutRect.bottom >= 0,
-      leaders: leadersRect && leadersRect.top < window.innerHeight && leadersRect.bottom >= 0,
-      teamMembers: teamMembersRect && teamMembersRect.top < window.innerHeight && teamMembersRect.bottom >= 0,
-      contact: contactRect && contactRect.top < window.innerHeight && contactRect.bottom >= 0,
-      footer: footerRect && footerRect.top < window.innerHeight && footerRect.bottom >= 0,
+    const sections = ['ourhistory', 'leaders', 'teammembers', 'contactus', 'footer'];
+    const visibility = {};
+    sections.forEach(id => {
+      const rect = getElementRect(id);
+      visibility[id === 'ourhistory' ? 'about' : id === 'teammembers' ? 'teamMembers' : id === 'contactus' ? 'contact' : id] = 
+        rect && rect.top < window.innerHeight && rect.bottom >= 0;
     });
+    setVisibleSections(prev => ({ ...prev, ...visibility }));
   };
 
   const handleDebouncedScroll = useDebounce(handleScroll, 100);
@@ -103,10 +81,7 @@ const OurStoryDetail = ({ interval = 3000 }) => {
   useEffect(() => {
     window.addEventListener('scroll', handleDebouncedScroll);
     handleScroll(); 
-
-    return () => {
-      window.removeEventListener('scroll', handleDebouncedScroll);
-    };
+    return () => window.removeEventListener('scroll', handleDebouncedScroll);
   }, [handleDebouncedScroll]);
 
   return (
@@ -114,21 +89,21 @@ const OurStoryDetail = ({ interval = 3000 }) => {
       <section className='ourstorydetail'>
         <div className='covers'>
           <div className='imgs'>
-            <img src={images[currentIndex]} alt="Company Slideshow" ref={imgRef} />
+            <img src={images[currentIndex]} alt="Slideshow" ref={imgRef} />
           </div>
           <div className='slogan'>
             <Heading title="Our Journey" subtitle="Temerachi Coffee Export" />
           </div>
         </div>
       </section>
-      
+
       <section>
         <div className="container md:flex mx-auto lg:my-[4%] my-8">
           <motion.div
             id="ourhistory"
-            initial={{ opacity: 0, y: 300 }}
-            animate={visibleSections.about ? { opacity: 1, y: 0 } : { opacity: 0, y: 70 }} // Apply animation based on visibility
-            transition={{ duration: 1 }}
+            initial={{ opacity: 0, y: 200 }}
+            animate={visibleSections.about ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+            transition={{ duration: 0.5 }}
             className="flex flex-col md:flex-row xl:gap-24 lg:gap-16 md:gap-8 gap-4 justify-center items-center"
           >
             <div className='about-text w-[90%] xl:w-[42%] 2xl:w-[40%] lg:w-[48%] md:w-[55%]'>
@@ -144,65 +119,50 @@ const OurStoryDetail = ({ interval = 3000 }) => {
           </motion.div>
         </div>
       </section>
-      
+
       <section className='bg-[#f8f9fa] flex justify-center items-center'>
         <motion.div
           id="leaders"
-          initial={{ opacity: 0, y: 300 }}
-          animate={visibleSections.leaders ? { opacity: 1, y: 0 } : { opacity: 0, y: 70 }} // Apply animation based on visibility
-          transition={{ duration: 1 }}
+          initial={{ opacity: 0, y: 200 }}
+          animate={visibleSections.leaders ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+          transition={{ duration: 0.5 }}
           className='container mx-auto text-center mb-8'
         >
           <Heading title="Founders" subtitle="Visionary Creators" />
-
-          <div className='justify-center items-center xl:w-[80%] lg:w-[90%] mx-auto md:my-12 my-0 px-4 md:p-4'>
+          <div className='xl:w-[80%] mx-auto mt-8'>
             <Swiper
-              className='custom-swiper'
               modules={[Pagination, Autoplay]}
               pagination={{ clickable: true }}
-              loop={true}
               spaceBetween={30}
-              autoplay={{
-                delay: 6000,
-                disableOnInteraction: false,
-              }}
-              grabCursor={true}
-              breakpoints={{
-                480: { slidesPerView: 1 },
-                667: { slidesPerView: 2 },
-                768: { slidesPerView: 2 },
-                1024: { slidesPerView: 2 },
-              }}
+              autoplay={{ delay: 6000 }}
+              breakpoints={{ 667: { slidesPerView: 2 } }}
             >
-              {management.map((founder, index) => (
-                <SwiperSlide key={`founder-${index}`} className="flex justify-center items-center">
-                  <div className="w-full lg:w-[85%]">
-                    <div className="flex justify-center items-center md:p-1 p-0">
-                      <img src={`${ImageSource}${founder.EmpImage}`} alt={`Founder ${founder.FullName}`} className="lg:w-[55%] lg:h-[35vh] maxm:h-[25vh] slg:h-[25vh] w-[60%] h-[33vh] object-cover border border-white shadow-custom mx-auto" />
-                    </div>
-                    <div className='aboutF-text text-center p-2'>
-                      <h2 className="text-[25px] font-bold tracking-wide text-[#105f4e] p-2 m-2">{founder.FullName}</h2>
-                      <p className='mb-4'>{founder.Memo}</p>
-                    </div>
+              {/* Added safe array check */}
+              {Array.isArray(management) && management.map((founder, index) => (
+                <SwiperSlide key={`founder-${index}`}>
+                  <div className="p-4">
+                    <img 
+                      src={`${ImageSource}${founder.EmpImage}`} 
+                      alt={founder.FullName} 
+                      className="w-[250px] h-[300px] object-cover mx-auto shadow-lg" 
+                    />
+                    <h2 className="text-xl font-bold mt-4 text-[#105f4e]">{founder.FullName}</h2>
+                    <p className='mt-2 text-gray-600'>{founder.Memo}</p>
                   </div>
                 </SwiperSlide>
               ))}
-
-              <div className="absolute top-[15%] left-[50%] transform -translate-x-1/2 hidden md:block">
-                <p className='text-[90px] italic'>&</p>
-              </div>
             </Swiper>
           </div>
         </motion.div>
       </section>
 
-      <section>
+      <section className="py-12">
         <div className='container mx-auto'>
           <motion.div
             id="teammembers"
-            initial={{ opacity: 0, y: 300 }}
-            animate={visibleSections.teamMembers ? { opacity: 1, y: 0 } : { opacity: 0, y: 70 }} // Apply animation based on visibility
-            transition={{ duration: 1 }}
+            initial={{ opacity: 0, y: 200 }}
+            animate={visibleSections.teamMembers ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+            transition={{ duration: 0.5 }}
             className="custom-swiper text-center mx-12 md:mx-24"
           >
             <Heading title="Meet Our Team" subtitle="The Faces Behind the Excellence" />
@@ -225,28 +185,29 @@ const OurStoryDetail = ({ interval = 3000 }) => {
                 1300: { slidesPerView: 4 },
               }}
             >
-              {teammembers.map((member, index) => (
-                <SwiperSlide key={`teammember-${index}`}>
-                  <div className="border-2 border-gray-200 shadow-custom relative h-[45vh] 2xl:h-[45vh] xl:h-[40vh] lg:h-[52vh]  md:h-[35vh] mb-16">
-                    <img src={`${ImageSource}${member.EmpImage}`} alt={member.FullName} className="w-full h-full object-cover" />
+            {/* Added safe array check */}
+            {Array.isArray(teammembers) && teammembers.map((member, index) => (
+              <SwiperSlide key={`team-${index}`}>
+                <div className="border-2 border-gray-200 shadow-custom relative h-[45vh] 2xl:h-[45vh] xl:h-[40vh] lg:h-[52vh]  md:h-[35vh] mb-16">
+                  <img src={`${ImageSource}${member.EmpImage}`} alt={member.FullName} className="w-full h-full object-cover" />
                     <div className="bg-[#391f11] bg-opacity-75 text-white text-center absolute bottom-0 left-0 w-full p-2 ">
                       <h2 className='font-semibold text-[1.2rem]'>{member.FullName}</h2>
-                      <p className='text-center text-white text-[0.97rem]'>{member.Positions}</p>
-                    </div>
+                    <p className='text-center text-white text-[0.97rem]'>{member.Positions}</p>
                   </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </motion.div>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </motion.div>
         </div>
       </section>
 
       <section className='bg-[#f8f9fa]'>
         <motion.div
           id="contactus"
-          initial={{ opacity: 0, y: 300 }}
-          animate={visibleSections.contact ? { opacity: 1, y: 0 } : { opacity: 0, y: 70 }} // Apply animation based on visibility
-          transition={{ duration: 1 }}
+          initial={{ opacity: 0, y: 200 }}
+          animate={visibleSections.contact ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+          transition={{ duration: 0.5 }}
           className="contactus"
         >
           <Contacts />

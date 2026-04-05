@@ -1,19 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const roleController = require('../controller/roleController');
-const { verifyToken, hasPermission } = require('../middleware/auth');
+// const { verifyToken, hasPermission } = require('../middleware/auth'); 
 
-// All routes require authentication
-router.use(verifyToken);
-
-// CRUD Routes for Roles
-router.get('/', hasPermission, roleController.getAllRoles);          // Get all roles    // Get role by ID
-router.post('/', hasPermission, roleController.createRole);         // Create new role
-router.put('/:id', hasPermission, roleController.updateRole);       // Update role
-router.delete('/:id', hasPermission, roleController.deleteRole);    // Delete role
-
-// Role Permissions
-router.get('/:id/permissions', hasPermission, roleController.getRolePermissions);       // Get permissions
-router.post('/:id/permissions', hasPermission, roleController.assignRolePermissions);   // Assign permissions
+// Apply your middlewares here if active
+router.get('/roles', roleController.getAllRoles);
+router.post('/roles', roleController.createRole);
+router.put('/roles/:id', roleController.updateRole);
+router.delete('/roles/:id', roleController.deleteRole);
+router.get('/roles/:id', roleController.getCurrentUserPermissions);
+router.get('/roles/permissions/list', roleController.getAllAvailablePermissions);
+router.get('/roles/:id/permissions', roleController.getRolePermissions);
+router.post('/roles/:id/permissions', roleController.assignRolePermissions);
 
 module.exports = router;

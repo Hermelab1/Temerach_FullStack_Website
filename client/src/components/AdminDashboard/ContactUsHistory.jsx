@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API_URL = 'http://localhost:4001/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import {getContactMessages, updateContactStatus, deleteContact,  } from '../API/apis';
+import { FiTrash2, FiCheckCircle, FiCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 const Contactushistory = () => {
   const [posts, setPosts] = useState([]);
@@ -10,132 +9,151 @@ const Contactushistory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [postsPerPage] = useState(5);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
-      // No headers needed here because we made the GET route public in the backend
-      const response = await axios.get(`${API_URL}/contactus`);
-      setPosts(response.data);
+      const response = await getContactMessages();
+      setPosts(response);
       setErrorMsg('');
     } catch (error) {
-      console.error('Fetch Error:', error);
-      setErrorMsg("Failed to load contact history data.");
+      setErrorMsg("Failed to synchronize with the server.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
+
+const handleStatusToggle = async (id, currentStatus) => {
+  const token = localStorage.getItem('authToken');
+  
+  // Debug: Check if token actually exists before making the call
+  if (!token) {
+    alert("You are not logged in or your session has expired.");
+    return;
+  }
+
+  try {
+    await updateContactStatus(id, { isRead: !currentStatus });
+    setPosts(prev => prev.map(p => p.id === id ? { ...p, isRead: !currentStatus } : p));
+  } catch (error) {
+    console.error("Error response:", error.response?.data); // Look here for backend's specific message
+    alert(error.response?.data?.message || "Failed to update status.");
+  }
+};
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this record?")) return;
-
+    if (!window.confirm("This action cannot be undone. Delete record?")) return;
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert("You must be logged in to delete records.");
-        return;
-      }
-
-      await axios.delete(`${API_URL}/contactus/${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      alert("Record deleted successfully.");
-      fetchPosts(); // Refresh list
+      await deleteContact(id);
+      setPosts(prev => prev.filter(post => post.id !== id));
     } catch (error) {
-      const msg = error.response?.data?.message || "Delete failed.";
-      alert(`Error: ${msg}`);
+      alert(error.response?.data?.message || "Delete failed.");
     }
   };
 
-  // Pagination logic
+  // --- PAGINATION LOGIC (FIXED) ---
   const indexOfLastPost = currentPage * postsPerPage;
   const indexOfFirstPost = indexOfLastPost - postsPerPage;
   const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
   const totalPages = Math.ceil(posts.length / postsPerPage) || 1;
 
   if (loading) return (
-    <div className="p-20 text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#105F4E] mx-auto"></div>
-      <p className="mt-4 text-gray-600">Loading history data...</p>
+    <div className="flex flex-col items-center justify-center min-h-[400px]">
+      <div className="w-10 h-10 border-4 border-gray-200 border-t-[#105F4E] rounded-full animate-spin"></div>
+      <p className="mt-4 text-sm font-medium text-gray-500">Retrieving records...</p>
     </div>
   );
 
   return (
-    <section className='adminsection p-4'>
-      <div className='card1 bg-white shadow-lg rounded-xl p-6 min-h-[500px] flex flex-col'>
-        <h2 className="text-2xl font-bold mb-6 text-[#105F4E] border-b pb-4">Contact Us History</h2>
+    <section className="p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         
+        <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Inquiry History</h2>
+            <p className="text-sm text-gray-500">Manage and respond to customer messages</p>
+          </div>
+          <span className="px-3 py-1 bg-[#105F4E]/10 text-[#105F4E] rounded-full text-xs font-bold uppercase tracking-wider">
+            {posts.length} Total
+          </span>
+        </div>
+
         {errorMsg && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
-            {errorMsg}
+          <div className="m-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm flex items-center gap-2">
+            <span>⚠️</span> {errorMsg}
           </div>
         )}
 
-        <div className="flex-grow overflow-x-auto">
-          <table className="min-w-full table-auto border-collapse">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 text-left">
-                <th className="border-b px-4 py-3 text-xs font-bold uppercase text-gray-500 text-center">ID</th>
-                <th className="border-b px-4 py-3 text-xs font-bold uppercase text-gray-500">Full Name</th>
-                <th className="border-b px-4 py-3 text-xs font-bold uppercase text-gray-500">Email</th>
-                <th className="border-b px-4 py-3 text-xs font-bold uppercase text-gray-500">Memo</th>
-                <th className="border-b px-4 py-3 text-xs font-bold uppercase text-gray-500">Sent Date</th>
-                <th className="border-b px-4 py-3 text-xs font-bold uppercase text-gray-500 text-center">Actions</th>
+              <tr className="bg-gray-50/50 text-gray-400 text-[11px] uppercase tracking-widest font-semibold">
+                <th className="px-8 py-4">Status</th>
+                <th className="px-4 py-4">Sender</th>
+                <th className="px-4 py-4">Message Preview</th>
+                <th className="px-4 py-4">Date</th>
+                <th className="px-8 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {currentPosts.length > 0 ? (
-                currentPosts.map((post) => (
-                  <tr key={post.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-4 text-sm text-gray-500 text-center">#{post.id}</td>
-                    <td className="px-4 py-4 text-sm font-semibold text-gray-900">{post.FullName}</td>
-                    <td className="px-4 py-4 text-sm text-[#105F4E]">{post.Email}</td>
-                    <td className="px-4 py-4 text-sm text-gray-600 max-w-xs truncate">{post.Memo}</td>
-                    <td className="px-4 py-4 text-sm text-gray-500">
-                      {new Date(post.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <button 
-                        onClick={() => handleDelete(post.id)}
-                        className="text-red-600 hover:text-red-900 font-medium text-sm transition"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="text-center py-20 text-gray-400 italic">No records found.</td>
+              {currentPosts.map((post) => (
+                <tr key={post.id} className={`hover:bg-gray-50/80 transition-colors ${!post.isRead ? 'bg-blue-50/20' : ''}`}>
+                  <td className="px-8 py-5">
+                    <button 
+                      onClick={() => handleStatusToggle(post.id, post.isRead)}
+                      className={`flex items-center bg-transparent gap-2 text-xs font-bold ${post.isRead ? 'text-gray-400' : 'text-[#105F4E]'}`}
+                    >
+                      {post.isRead ? <FiCheckCircle /> : <FiCircle className="animate-pulse" />}
+                      {post.isRead ? 'READ' : 'NEW'}
+                    </button>
+                  </td>
+                  <td className="px-4 py-5">
+                    <div className="font-semibold text-gray-900">{post.FullName}</div>
+                    <div className="text-xs text-gray-500">{post.Email}</div>
+                  </td>
+                  <td className="px-4 py-5 text-sm text-gray-600 max-w-[200px] truncate">
+                    {post.Memo}
+                  </td>
+                  <td className="px-4 py-5 text-sm text-gray-400">
+                    {new Date(post.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-8 py-5 text-right">
+                    <button 
+                      onClick={() => handleDelete(post.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                    >
+                      <FiTrash2 size={18} />
+                    </button>
+                  </td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination Section */}
-        <div className="mt-8 flex items-center justify-between border-t pt-4">
-          <p className="text-sm text-gray-500">
-            Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
+        {/* --- PAGINATION FOOTER (FIXED) --- */}
+        <div className="px-8 py-5 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+          <p className="text-xs text-gray-500 font-medium uppercase tracking-tighter">
+            Showing {posts.length > 0 ? indexOfFirstPost + 1 : 0} - {Math.min(indexOfLastPost, posts.length)} of {posts.length}
           </p>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
             <button 
-              className={`px-4 py-2 text-sm rounded border ${currentPage === 1 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
-              onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="p-2 rounded-md border bg-white disabled:opacity-30 hover:bg-gray-100 transition-colors"
             >
-              Previous
+              <FiChevronLeft />
             </button>
+            <span className="text-sm font-bold text-gray-700">{currentPage}</span>
             <button 
-              className={`px-4 py-2 text-sm rounded border ${currentPage >= totalPages ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
-              onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-              disabled={currentPage >= totalPages}
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="p-2 rounded-md border bg-white disabled:opacity-30 hover:bg-gray-100 transition-colors"
             >
-              Next
+              <FiChevronRight />
             </button>
           </div>
         </div>

@@ -1,13 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
-
-const API_URL = 'http://localhost:4001/api';
+import {getCategories, addCategory, updateCategory} from '../API/apis';
 
 const CategoriesAdd = ({ username }) => {
     const initialFormData = {
         id: null,
         categoryName: '',
         categoryDescription: '',
+        subCategory: '',
         isActive: true,
     };
 
@@ -20,13 +19,10 @@ const CategoriesAdd = ({ username }) => {
 
     // 1. Memoized fetch function
     const fetchCategories = useCallback(async () => {
-        const token = localStorage.getItem('authToken');
         try {
-            const response = await axios.get(`${API_URL}/allcategory`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await getCategories();
             // Ensure we set an array even if the backend returns something else
-            setPosts(Array.isArray(response.data) ? response.data : response.data.categories || []);
+            setPosts(Array.isArray(response) ? response : response.categories || []);
         } catch (error) {
             console.error('Fetch Error:', error);
             setPosts([]);
@@ -51,21 +47,15 @@ const CategoriesAdd = ({ username }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
-        const token = localStorage.getItem('authToken');
-        
+        setLoading(true);        
         try {
             const payload = { ...formData };
             if (isEditing) {
-                await axios.put(`${API_URL}/updatecategory/${formData.id}`, payload, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await updateCategory(formData.id, payload);
             } else {
                 // Remove ID when adding new
                 const { id, ...newData } = payload;
-                await axios.post(`${API_URL}/addcategory`, newData, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await addCategory(newData);
             }
             alert("Success!");
             setFormData(initialFormData);
@@ -90,7 +80,7 @@ const CategoriesAdd = ({ username }) => {
                 <h2 className="text-xl font-bold mb-4">
                     {isEditing ? `Editing: ${formData.categoryName}` : "Add New Category"}
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Category Name</label>
                         <input 
@@ -109,6 +99,15 @@ const CategoriesAdd = ({ username }) => {
                             onChange={e => setFormData({...formData, categoryDescription: e.target.value})}
                             className="border p-3 rounded-lg outline-blue-500 bg-slate-50 focus:bg-white transition-all"
                             required
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Sub Category</label>
+                        <input
+                            placeholder="Optional sub-category"
+                            value={formData.subCategory}
+                            onChange={e => setFormData({...formData, subCategory: e.target.value})}
+                            className="border p-3 rounded-lg outline-blue-500 bg-slate-50 focus:bg-white transition-all"
                         />
                     </div>
                 </div>
@@ -149,6 +148,7 @@ const CategoriesAdd = ({ username }) => {
                         <tr>
                             <th className="p-4 w-16">ID</th>
                             <th className="p-4">Category</th>
+                            <th className="p-4">Sub Category</th>
                             <th className="p-4">Description</th>
                             <th className="p-4 text-center">Status</th>
                             <th className="p-4 text-center">Action</th>
@@ -160,6 +160,7 @@ const CategoriesAdd = ({ username }) => {
                                 <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                                     <td className="p-4 text-slate-400 font-mono">#{item.id}</td>
                                     <td className="p-4 font-bold text-slate-700">{item.categoryName}</td>
+                                    <td className="p-4 text-slate-500">{item.subCategory}</td>
                                     <td className="p-4 text-slate-500">{item.categoryDescription}</td>
                                     <td className="p-4 text-center">
                                         <span className={`px-2 py-1 rounded-full text-[9px] font-black tracking-tighter ${item.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
